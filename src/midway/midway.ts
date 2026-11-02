@@ -33,9 +33,11 @@ import {
   inputDirection,
   layoutMidway,
   pathToBooth,
+  startOllie,
   strollTiles,
   toScreen,
   toTile,
+  updateOllie,
   updateVisitor,
   walk,
   type BoothSlot,
@@ -67,7 +69,8 @@ const MOVE_KEYS: Record<string, [number, number]> = {
   ArrowRight: [1, 0],
   KeyD: [1, 0],
 };
-const PLAY_KEYS = new Set(['KeyE', 'Enter', 'Space']);
+const PLAY_KEYS = new Set(['KeyE', 'Enter']);
+const OLLIE_KEY = 'Space';
 const DEVCON_URL =
   'https://tessl.io/devcon?utm_source=carnival&utm_medium=midway-billboard&utm_campaign=tessl-carnival';
 const MIN_QUALITY = 0.5;
@@ -156,6 +159,9 @@ export function startMidway(canvas: HTMLCanvasElement, options: MidwayOptions): 
       player.path = [];
       destination = undefined;
       event.preventDefault();
+    } else if (event.code === OLLIE_KEY && !isControl(event.target)) {
+      event.preventDefault();
+      if (!event.repeat) startOllie(player);
     } else if (PLAY_KEYS.has(event.code) && !isControl(event.target) && inReach?.gameId) {
       event.preventDefault();
       play(inReach);
@@ -344,7 +350,8 @@ export function startMidway(canvas: HTMLCanvasElement, options: MidwayOptions): 
       box.top < visible.bottom;
     const walkerBox = (w: Point): Box => {
       const p = toScreen(w.x, w.y);
-      return { left: p.x - 10, right: p.x + 10, top: p.y - 40, bottom: p.y + 4 };
+      // Tall enough for the player's marker at the top of an ollie.
+      return { left: p.x - 10, right: p.x + 10, top: p.y - 56, bottom: p.y + 4 };
     };
 
     type Drawable = { depth: number; box: Box; draw: () => void };
@@ -419,6 +426,7 @@ export function startMidway(canvas: HTMLCanvasElement, options: MidwayOptions): 
     if (direction.x !== 0 || direction.y !== 0) walk(map, player, direction, dt);
     else if (player.path.length > 0) followPath(player, dt);
     else player.walking = false;
+    updateOllie(player, dt);
 
     for (const visitor of visitors) updateVisitor(map, visitor, dt, Math.random, strolls);
 

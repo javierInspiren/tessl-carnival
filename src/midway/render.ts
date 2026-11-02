@@ -3,6 +3,8 @@ import bannerUrl from './aidevcon-banner.png';
 import { palette } from './palette';
 import {
   CART_KINDS,
+  OLLIE_TIME,
+  ollieHeight,
   toScreen,
   type BoothSlot,
   type MidwayMap,
@@ -791,7 +793,15 @@ function person(
   x: number,
   y: number,
   look: Look,
-  options: { swing?: number; back?: boolean; dir?: number; player?: boolean; t?: number } = {},
+  options: {
+    swing?: number;
+    back?: boolean;
+    dir?: number;
+    player?: boolean;
+    t?: number;
+    /** Stands the person on a skateboard, `lift` pixels off the ground. */
+    skate?: { lift: number; tilt: number };
+  } = {},
 ) {
   const swing = options.swing ?? 0;
   const dir = options.dir ?? 1;
@@ -802,6 +812,11 @@ function person(
     ctx.beginPath();
     ctx.ellipse(x, y, 8, 3.5, 0, 0, Math.PI * 2);
     ctx.stroke();
+  }
+  if (options.skate) {
+    skateboard(ctx, x, y - options.skate.lift, dir, options.skate.tilt);
+    // Stand on the deck.
+    y -= options.skate.lift + 3;
   }
   stroke(
     ctx,
@@ -882,6 +897,20 @@ function person(
       palette.gold,
     );
   }
+}
+
+/**
+ * A skateboard with its wheels at (x, y), nose pointing `dir`. `tilt` lifts
+ * the nose (positive) or the tail (negative), in pixels.
+ */
+function skateboard(ctx: Ctx, x: number, y: number, dir: number, tilt: number) {
+  const nose: Pt = [x + dir * 7, y - 2.5 - tilt];
+  const tail: Pt = [x - dir * 7, y - 2.5 + tilt];
+  // A wheel under each end of the deck, following its tilt.
+  for (const s of [-0.6, 0.6])
+    oval(ctx, x + dir * s * 7, y - 0.8 - s * tilt, 1.3, 1.3, palette.ink);
+  stroke(ctx, [tail, nose], palette.woodDark, 2.4);
+  stroke(ctx, [tail, nose], palette.red, 1);
 }
 
 function cart(ctx: Ctx, prop: Prop, t: number) {
@@ -1651,6 +1680,20 @@ export const PLAYER_LOOK: Look = {
 
 export function drawWalker(ctx: Ctx, walker: Walker, look: Look, player = false, t = 0) {
   const p = toScreen(walker.x, walker.y);
+  if (player) {
+    // The player rides a skateboard, so their legs stay still. An ollie pops
+    // the nose up first, then levels out and lands tail first.
+    const tilt =
+      walker.ollie === undefined ? 0 : Math.cos((walker.ollie / OLLIE_TIME) * Math.PI) * 2.5;
+    person(ctx, p.x, p.y, look, {
+      back: walker.facing === 'back',
+      dir: walker.flipped ? -1 : 1,
+      player,
+      t,
+      skate: { lift: ollieHeight(walker), tilt },
+    });
+    return;
+  }
   const swing = walker.walking ? Math.sin(walker.stride * Math.PI * 2.2) : 0;
   person(ctx, p.x, p.y, look, {
     swing,

@@ -14,6 +14,10 @@ export const VISITOR_SPEED = 1.6;
 export const WALKER_RADIUS = 0.3;
 /** How close, in tiles, the player must stand to a booth to play it. */
 export const BOOTH_REACH = 1.1;
+/** How long an ollie stays in the air, in seconds. */
+export const OLLIE_TIME = 0.55;
+/** How high an ollie lifts the skateboard at its peak, in pixels. */
+export const OLLIE_HEIGHT = 12;
 
 export interface Point {
   x: number;
@@ -274,10 +278,32 @@ export interface Walker extends Point {
   walking: boolean;
   /** Distance walked, in tiles; drives the walking animation. */
   stride: number;
+  /** Seconds since the current ollie began, or undefined when on the ground. */
+  ollie?: number;
 }
 
 export function createWalker(at: Point): Walker {
   return { x: at.x, y: at.y, path: [], facing: 'front', flipped: false, walking: false, stride: 0 };
+}
+
+/** Pops an ollie. Returns false when the walker is already in the air. */
+export function startOllie(walker: Walker): boolean {
+  if (walker.ollie !== undefined) return false;
+  walker.ollie = 0;
+  return true;
+}
+
+/** Moves an ollie on by `dt` seconds, landing it once its time is up. */
+export function updateOllie(walker: Walker, dt: number) {
+  if (walker.ollie === undefined) return;
+  walker.ollie += dt;
+  if (walker.ollie >= OLLIE_TIME) walker.ollie = undefined;
+}
+
+/** How far above the ground the walker is, in pixels: a smooth arc over the ollie. */
+export function ollieHeight(walker: Walker): number {
+  if (walker.ollie === undefined) return 0;
+  return Math.sin((walker.ollie / OLLIE_TIME) * Math.PI) * OLLIE_HEIGHT;
 }
 
 function face(walker: Walker, dx: number, dy: number) {

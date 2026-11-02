@@ -9,10 +9,15 @@ import {
   inputDirection,
   isBlocked,
   layoutMidway,
+  OLLIE_HEIGHT,
+  OLLIE_TIME,
+  ollieHeight,
   pathToBooth,
   seededRandom,
+  startOllie,
   toScreen,
   toTile,
+  updateOllie,
   updateVisitor,
   walk,
 } from './world';
@@ -179,5 +184,33 @@ describe('visitors', () => {
       expect(isBlocked(map, Math.floor(visitor.x), Math.floor(visitor.y))).toBe(false);
       expect(visitor.stride).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('ollie', () => {
+  it('lifts the player off the ground and lands them again', () => {
+    const player = createWalker({ x: 5, y: 5 });
+    expect(ollieHeight(player)).toBe(0);
+    expect(startOllie(player)).toBe(true);
+    updateOllie(player, OLLIE_TIME / 2);
+    expect(ollieHeight(player)).toBeCloseTo(OLLIE_HEIGHT);
+    updateOllie(player, OLLIE_TIME / 2);
+    expect(player.ollie).toBeUndefined();
+    expect(ollieHeight(player)).toBe(0);
+  });
+
+  it("can't pop a second ollie in mid-air", () => {
+    const player = createWalker({ x: 5, y: 5 });
+    startOllie(player);
+    updateOllie(player, 0.1);
+    expect(startOllie(player)).toBe(false);
+    expect(player.ollie).toBeCloseTo(0.1);
+  });
+
+  it('keeps moving while in the air', () => {
+    const map = layoutMidway(['water-cannon']);
+    const player = createWalker(map.spawn);
+    startOllie(player);
+    expect(walk(map, player, { x: 0, y: -1 }, 0.1)).toBeGreaterThan(0);
   });
 });
