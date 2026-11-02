@@ -1337,6 +1337,40 @@ function ferrisWheel(ctx: Ctx, prop: Prop, t: number) {
   oval(ctx, hub[0], hub[1], 3.5, 3.5, palette.woodDark);
   legs(spread + 0.15, palette.cream);
   box(ctx, cx - 0.6, cy - 0.5, 1.2, 1, 0, 4, palette.creamShade, palette.cream, palette.creamShade);
+  wheelFire(ctx, hub, (angle) => onWheel(spread, turn + angle), t);
+}
+
+/** A flickering flame licking upward from (x, y), `h` pixels tall. */
+function flame(ctx: Ctx, x: number, y: number, h: number, t: number, seed: number) {
+  const sway = Math.sin(t * 7 + seed * 2.3) * h * 0.18;
+  const lick = (height: number, width: number, color: string) => {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x - width, y);
+    ctx.quadraticCurveTo(x - width, y - height * 0.6, x + sway, y - height);
+    ctx.quadraticCurveTo(x + width, y - height * 0.6, x + width, y);
+    ctx.quadraticCurveTo(x, y + width * 0.6, x - width, y);
+    ctx.fill();
+  };
+  lick(h, h * 0.32, palette.fire);
+  lick(h * 0.6, h * 0.18, palette.fireCore);
+}
+
+/** The ferris wheel is on fire: a glow, rising smoke and flames along the rim. */
+function wheelFire(ctx: Ctx, hub: Pt, onRim: (angle: number) => Pt, t: number) {
+  oval(ctx, hub[0], hub[1], 84, 84, palette.fireGlow);
+  for (let i = 0; i < 4; i++) {
+    const rise = (t * 0.25 + i / 4) % 1;
+    const r = 10 + rise * 22;
+    const drift = Math.sin(t + i * 1.7) * 10 + rise * 18;
+    oval(ctx, hub[0] + drift, hub[1] - 70 - rise * 70, r, r * 0.8, palette.smoke);
+  }
+  const flames = 16;
+  for (let i = 0; i < flames; i++) {
+    const [fx, fy] = onRim((i / flames) * Math.PI * 2);
+    const h = 12 + 6 * Math.sin(t * 9 + i * 1.9);
+    flame(ctx, fx, fy, h, t, i);
+  }
 }
 
 // ── Booths ────────────────────────────────────────────────────────────────

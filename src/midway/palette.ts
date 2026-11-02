@@ -47,6 +47,10 @@ export const palette = {
   closed: '#a99cc4',
   closedShade: '#8a7daa',
   white: '#ffffff',
+  fire: '#ff5a1f',
+  fireCore: '#ffd23f',
+  fireGlow: 'rgba(255, 120, 30, 0.22)',
+  smoke: 'rgba(70, 60, 70, 0.35)',
 
   skins: ['#f1c27d', '#c68642', '#8d5524', '#e0ac69', '#ffdbac'],
   hairs: ['#3b2219', '#1b1035', '#a55728', '#e6c35c', '#6b4429'],
